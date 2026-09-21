@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hummbl.dev/schemas/security/agent-lock/v1.0.0/agent-lock.schema.json",
+  "title": "Agent Configuration Lockfile",
+  "description": "Resolved agentic configuration unit -- the 'package-lock.json' for an AI agent. Whereas an agent contract declares intent (like package.json), the lockfile records what was actually resolved and observed at run time: exact harness version, model pin discipline, goal hash, every tool with its version and permission surface, and the skills/prompts/policy in effect. provenance.config_sha256 -- the SHA-256 of the RFC 8785 (JCS) canonicalization of this document with the 'provenance' object excluded -- is the stable identity of the configuration UNIT and is what Agentic Vulnerability Records (AVRs) reference.",
+  "type": "object",
+  "required": ["lockfile_format", "generated_at", "agent", "harness", "model", "tools", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "lockfile_format": {
+      "const": "agent-lock/1.0.0",
+      "description": "Format identifier. Always 'agent-lock/1.0.0'."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 timestamp of when the configuration was resolved/observed"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Tool/process that produced this lockfile"
+    },
+    "environment": {
+      "type": "object",
+      "description": "Execution environment context",
+      "additionalProperties": false,
+      "properties": {
+        "os": { "type": "string", "description": "Operating system, e.g. 'windows', 'linux', 'darwin'" },
+        "arch": { "type": "string", "description": "CPU architecture, e.g. 'x86_64', 'arm64'" },
+        "runtime_name": { "type": "string", "description": "Language runtime, e.g. 'python', 'node'" },
+        "runtime_version": { "type": "string", "description": "Runtime version string" }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "description": "The deployed agent identity and its goal",
+      "required": ["id", "goal"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable agent identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable agent name"
+        },
+        "goal": {
+          "type": "object",
+          "description": "The agent's assigned objective. Cleartext goal text is stored by reference (ref) or hash (sha256), not inline, so lockfiles can circulate without disclosing proprietary instructions.",
+          "required": ["summary"],
+          "additionalProperties": false,
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "Short public-safe description of the goal"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "SHA-256 of the full goal/system-task text"
+            },
+            "ref": {
+              "type": "string",
+              "description": "URI referencing the authoritative goal document"
+            },
+            "class": {
+              "type": "string",
+              "enum": [
+                "code-editing",
+                "research",
+                "ops",
+                "data-processing",
+                "customer-facing",
+                "creative",
+                "multi-agent-orchestration",
+                "security-testing",
+                "other"
+              ],
+              "description": "Goal category; vulnerability records can target a whole class"
+            }
+          }
+        },
+        "system_prompt_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the resolved system prompt"
+        }
+      }
+    },
+    "harness": {
+      "type": "object",
+      "description": "The agent harness -- the orchestrating runtime that owns the loop (e.g., an agent CLI, framework, or platform runner)",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Harness identifier, e.g. 'devin-cli', 'claude-code', 'opencode', 'custom'"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact resolved version string as reported by the harness"
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["stable", "beta", "nightly", "commit", "dev", "unknown"],
+          "description": "Release channel the version came from"
+        },
+        "revision": {
+          "type": "string",
+          "description": "VCS commit SHA or build revision, when the harness was built from source"
+        },
+        "purl": {
+          "type": "string",
+          "description": "Package URL (purl) identifying the harness package, e.g. 'pkg:npm/...' or 'pkg:pypi/...'"
+        },
+        "config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the effective harness configuration (settings file, flags, env-derived config) in canonical form"
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "description": "The reasoning engine. Hosted models have no stable 'version' in the package sense -- 'pin' declares which identity anchor applies, which determines what 'affected' matching can prove.",
+      "required": ["provider", "name", "version", "pin"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model provider, e.g. 'anthropic', 'openai', 'google', 'ollama', 'self-hosted'"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model family/name as requested, e.g. 'claude-opus-4-6', 'gpt-5.2', 'qwen3'"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Resolved version or snapshot identifier, e.g. dated snapshot, deployment ID, or 'latest'"
+        },
+        "pin": {
+          "type": "string",
+          "enum": ["weights", "snapshot", "alias", "floating"],
+          "description": "Identity stability: weights = content-addressed open weights (weights_sha256 set); snapshot = dated provider snapshot; alias = mutable provider alias (e.g. '-latest'); floating = unknown/drifts"
+        },
+        "weights_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the model weights file(s). Required when pin='weights'; the only form of model identity that cannot silently change."
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "API endpoint/base URL the model was served from"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Resolved inference parameters. Behavior-relevant settings belong in the unit because identical components under different parameters are different configurations.",
+          "additionalProperties": true,
+          "properties": {
+            "temperature": { "type": "number" },
+            "top_p": { "type": "number" },
+            "top_k": { "type": "integer" },
+            "max_tokens": { "type": "integer" },
+            "seed": { "type": "integer" },
+            "reasoning_effort": { "type": "string" }
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "Every tool the agent can invoke, with version and permission surface. Exact versions AND schema_sha256 are required for CVE-grade matching: a tool's callable schema can mutate without its package version changing (tool poisoning).",
+      "items": {
+        "type": "object",
+        "required": ["name", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Tool name as exposed to the model"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["builtin", "mcp", "exec", "filesystem", "network", "browser", "memory", "custom"],
+            "description": "Tool class"
+          },
+          "version": {
+            "type": "string",
+            "description": "Exact resolved tool/package version"
+          },
+          "purl": {
+            "type": "string",
+            "description": "Package URL identifying the tool package"
+          },
+          "source_uri": {
+            "type": "string",
+            "description": "Where the tool was obtained (registry, repo URL, path)"
+          },
+          "server": {
+            "type": "object",
+            "description": "MCP/remote server backing the tool, when applicable",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "version": { "type": "string" },
+              "transport": {
+                "type": "string",
+                "enum": ["stdio", "sse", "streamable-http", "http", "unknown"]
+              },
+              "endpoint": { "type": "string" }
+            }
+          },
+          "schema_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the tool's resolved input/output schema (canonical JSON). Detects silent tool-schema mutation at constant package version."
+          },
+          "permissions": {
+            "type": "object",
+            "description": "Granted permission surface -- the blast-radius fields vulnerability predicates match on",
+            "additionalProperties": false,
+            "properties": {
+              "scopes": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Capability scopes, e.g. 'fs:write', 'net:egress', 'proc:spawn'"
+              },
+              "fs_read": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Readable filesystem paths/globs"
+              },
+              "fs_write": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Writable filesystem paths/globs"
+              },
+              "egress": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Permitted network egress hosts/domains; empty = none, absent = unrestricted/unknown"
+              },
+              "exec": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "allowed": { "type": "boolean" },
+                  "commands": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Allowlisted command patterns; empty means unrestricted when allowed=true"
+                  }
+                }
+              },
+              "secrets": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Names (not values) of secrets/credentials the tool can reach"
+              }
+            }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "description": "Resolved skills, prompts, plugins, and instruction packs in effect",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "version": { "type": "string" },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the skill content"
+          },
+          "source_uri": { "type": "string" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "description": "The guardrail/policy bundle enforced on this configuration",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the effective policy document"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Identity of this configuration UNIT",
+      "required": ["config_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the RFC 8785 (JCS) canonicalization of this lockfile with the 'provenance' object excluded. THE vulnerability-unit identity: two deployments with the same config_sha256 are the same configuration."
+        },
+        "transitive_tools_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the canonical sorted list of tool (name, version, schema_sha256) triples; a coarser identity stable across unrelated field changes"
+        },
+        "attestations": {
+          "type": "array",
+          "description": "Signatures or attestations over config_sha256 (in-toto, sigstore, etc.)",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "type": "string" },
+              "uri": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

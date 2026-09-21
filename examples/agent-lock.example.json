@@ -1,0 +1,90 @@
+{
+  "lockfile_format": "agent-lock/1.0.0",
+  "generated_at": "2026-09-21T14:30:00Z",
+  "generated_by": "agent-lock-generator/0.1.0",
+  "environment": {
+    "os": "windows",
+    "arch": "x86_64",
+    "runtime_name": "python",
+    "runtime_version": "3.14.6"
+  },
+  "agent": {
+    "id": "coding-agent-01",
+    "name": "Example Coding Agent",
+    "goal": {
+      "summary": "Modify code in a checked-out repository per task instructions",
+      "sha256": "1b6f2c8a91d4e3f7056ab9c2d8e5f4a3b7c9d1e2f3a4b5c6d7e8f9a0b1c2d3e4",
+      "class": "code-editing"
+    },
+    "system_prompt_sha256": "9f8e7d6c5b4a39281706f5e4d3c2b1a0987654321fedcba0987654321fedcba0"
+  },
+  "harness": {
+    "name": "example-agent-cli",
+    "version": "2.3.1",
+    "channel": "stable",
+    "purl": "pkg:pypi/example-agent-cli@2.3.1",
+    "config_sha256": "aa11bb22cc33dd44ee55ff660011223344556677889900aabbccddeeff001122"
+  },
+  "model": {
+    "provider": "anthropic",
+    "name": "claude-opus-4-6",
+    "version": "20260901",
+    "pin": "snapshot",
+    "endpoint": "https://api.example-llm.invalid/v1",
+    "parameters": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  "tools": [
+    {
+      "name": "read_file",
+      "kind": "builtin",
+      "permissions": {
+        "fs_read": ["./src/**"]
+      }
+    },
+    {
+      "name": "write_file",
+      "kind": "mcp",
+      "version": "1.4.0",
+      "purl": "pkg:npm/%40example/fs-mcp@1.4.0",
+      "server": {
+        "name": "fs-mcp",
+        "version": "1.4.0",
+        "transport": "stdio"
+      },
+      "schema_sha256": "deadbeef00112233445566778899aabbccddeeff00112233445566778899aabb",
+      "permissions": {
+        "fs_read": ["./src/**"],
+        "fs_write": ["./src/**"]
+      }
+    },
+    {
+      "name": "run_shell",
+      "kind": "exec",
+      "permissions": {
+        "exec": {
+          "allowed": true,
+          "commands": []
+        }
+      }
+    }
+  ],
+  "skills": [
+    {
+      "name": "project-conventions",
+      "version": "0.9.0",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "policy": {
+    "name": "default-guardrails",
+    "version": "1.2.0",
+    "sha256": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100"
+  },
+  "provenance": {
+    "config_sha256": "e063501344b39585c90885f1c8ad53f286f0347d342eafec53e3be181935bf25",
+    "transitive_tools_sha256": "1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90"
+  }
+}
