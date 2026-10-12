@@ -12,6 +12,22 @@ agent contract (package.json)  ->  agent-lock (package-lock.json)  ->  ACVE reco
 
 Zero dependencies. Python 3.11+ stdlib only. Everything here runs offline.
 
+## Execution evidence candidate
+
+The additive [observation profile](OBSERVATION.md) binds evaluations to explicit
+evidence, session identity, configuration epoch and freshness. Missing evidence
+is `unknown`, not an unaffected verdict. It leaves native formats unchanged.
+Both this personal repository and `hummbl-io/hummbl-acve` remain active; shared
+schema/corpus checks keep their independent implementations aligned.
+
+```sh
+python -m acve observation-check observation.json query.json --at 2026-01-01T12:30:00Z
+```
+
+Exit codes: 0 true, 1 false, 2 invalid/unavailable input, 3 unknown. Use trusted
+local files; this command never fetches evidence references. A passing result
+is neither authorization nor a deployment safety assessment.
+
 ## Quick start
 
 ```bash
@@ -74,7 +90,7 @@ WG, agent-bom, SPDX/CycloneDX AI profiles) and exactly what's uncovered.
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -v   # 14 tests, zero deps
+python -m unittest discover -s tests -v   # stdlib-only tests
 ```
 
 ## License
