@@ -1,0 +1,85 @@
+{
+  "title": "ACVE observation 0.1.0",
+  "description": "Closed structural contract using the repository validator subset. Semantic validation additionally enforces strict JSON, scalar strings, integer-only safe numbers, budgets, canonical pointers, source paths, timestamps and interval ordering, unique assertions, value presence iff known, and digest integrity. References are opaque and never fetched.",
+  "type": "object",
+  "required": ["format", "observation_id", "observed_at", "valid_until", "subject", "source", "assertions", "links", "receipts", "integrity"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {"const": "acve-observation/0.1.0"},
+    "observation_id": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"},
+    "valid_until": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"},
+    "subject": {
+      "type": "object",
+      "required": ["agent", "host", "surface", "session_id", "execution_id", "configuration_epoch"],
+      "additionalProperties": false,
+      "properties": {
+        "agent": {"type": "string", "minLength": 1},
+        "host": {"type": "string", "minLength": 1},
+        "surface": {"type": "string", "minLength": 1},
+        "session_id": {"type": "string", "minLength": 1},
+        "execution_id": {"type": "string", "minLength": 1},
+        "configuration_epoch": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["repository", "revision", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "path": {"type": "string", "minLength": 1}
+      }
+    },
+    "assertions": {
+      "type": "array", "maxItems": 512,
+      "items": {
+        "type": "object",
+        "required": ["path", "status", "basis", "evidence_ref"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string"},
+          "status": {"type": "string", "enum": ["known", "unknown", "invalid", "unavailable"]},
+          "basis": {"type": "string", "enum": ["observed", "configured", "inferred"]},
+          "evidence_ref": {"type": "string", "minLength": 1},
+          "value": {"type": ["null", "boolean", "string", "integer", "array", "object"]}
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rel", "namespace", "id", "revision"],
+        "additionalProperties": false,
+        "properties": {
+          "rel": {"type": "string", "enum": ["objective", "authorization", "capacity", "capability", "taxonomy", "base120", "factory-admission", "policy", "evaluation"]},
+          "namespace": {"type": "string", "minLength": 1},
+          "id": {"type": "string", "minLength": 1},
+          "revision": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "receipts": {
+      "type": "object",
+      "required": ["invocation", "transport", "durability", "evaluation"],
+      "additionalProperties": false,
+      "properties": {
+        "invocation": {"type": "string", "enum": ["succeeded", "failed", "unknown", "not_attempted"]},
+        "transport": {"type": "string", "enum": ["succeeded", "failed", "unknown", "not_attempted"]},
+        "durability": {"type": "string", "enum": ["succeeded", "failed", "unknown", "not_attempted"]},
+        "evaluation": {"type": "string", "enum": ["succeeded", "failed", "unknown", "not_attempted"]}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["algorithm", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {"const": "acve-observation-json/0.1.0"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import importlib.resources
+import re
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,12 @@ _SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 
 def load_schema(name: str) -> dict[str, Any]:
     """Load a bundled schema by basename, e.g. 'agent-vulnerability'."""
+    if not isinstance(name, str) or not re.fullmatch(r'[a-z][a-z0-9-]*', name):
+        raise FileNotFoundError('unknown schema name')
+    resource = importlib.resources.files('acve').joinpath('schemas', f'{name}.schema.json')
+    if resource.is_file():
+        return json.loads(resource.read_text(encoding='utf-8'))
+    # Editable/source checkouts retain schemas/ as the canonical authoring path.
     path = _SCHEMAS_DIR / f"{name}.schema.json"
     if not path.exists():
         raise FileNotFoundError(f"schema not found: {path}")

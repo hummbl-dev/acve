@@ -1,0 +1,1138 @@
+{
+  "format": "acve-observation-conformance/0.1.0",
+  "description": "Synthetic portable observations. changes replace root fields, not recursive merge. Each expected outcome is an explicit contract oracle. Child consumers seal a fresh input before evaluation; separate ingestion tests cover tampering.",
+  "base": {
+    "format": "acve-observation/0.1.0",
+    "observation_id": "synthetic-observation-001",
+    "observed_at": "2026-01-01T12:00:00Z",
+    "valid_until": "2026-01-01T13:00:00Z",
+    "subject": {
+      "agent": "example-agent",
+      "host": "example-host",
+      "surface": "example-cli",
+      "session_id": "session-a",
+      "execution_id": "execution-a",
+      "configuration_epoch": 0
+    },
+    "source": {
+      "repository": "example/capabilities",
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": "registry/capabilities.json"
+    },
+    "assertions": [
+      {
+        "path": "/model/name",
+        "status": "known",
+        "basis": "observed",
+        "evidence_ref": "fixture:model",
+        "value": "model-a"
+      },
+      {
+        "path": "/model/effort",
+        "status": "known",
+        "basis": "observed",
+        "evidence_ref": "fixture:effort",
+        "value": "medium"
+      },
+      {
+        "path": "/tools/0/enabled",
+        "status": "known",
+        "basis": "observed",
+        "evidence_ref": "fixture:tool-0",
+        "value": false
+      },
+      {
+        "path": "/optional",
+        "status": "known",
+        "basis": "observed",
+        "evidence_ref": "fixture:null",
+        "value": null
+      }
+    ],
+    "links": [
+      {
+        "rel": "objective",
+        "namespace": "example/objectives",
+        "id": "objective-1",
+        "revision": "1"
+      },
+      {
+        "rel": "base120",
+        "namespace": "example/base120",
+        "id": "DE3",
+        "revision": "1"
+      },
+      {
+        "rel": "authorization",
+        "namespace": "example/authorizations",
+        "id": "authorization-1",
+        "revision": "1"
+      }
+    ],
+    "receipts": {
+      "invocation": "succeeded",
+      "transport": "succeeded",
+      "durability": "failed",
+      "evaluation": "not_attempted"
+    }
+  },
+  "cases": [
+    {
+      "id": "known-match",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "known-mismatch",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-b"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "false",
+        "reasons": []
+      }
+    },
+    {
+      "id": "disabled-tool-is-known-false",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/tools/0/enabled",
+          "value": true
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "false",
+        "reasons": []
+      }
+    },
+    {
+      "id": "known-null-equals-null",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/optional",
+          "value": null
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "known-null-exists",
+      "changes": {},
+      "expression": {
+        "exists": {
+          "path": "/optional",
+          "value": true
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "missing-not-negative",
+      "changes": {},
+      "expression": {
+        "exists": {
+          "path": "/missing",
+          "value": false
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "missing-equality",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/missing",
+          "value": false
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "unknown-evidence",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "unknown",
+            "basis": "observed",
+            "evidence_ref": "fixture:unknown"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "unknown_evidence"
+        ]
+      }
+    },
+    {
+      "id": "invalid-evidence",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "invalid",
+            "basis": "observed",
+            "evidence_ref": "fixture:invalid"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "invalid_evidence"
+        ]
+      }
+    },
+    {
+      "id": "unavailable-evidence",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "unavailable",
+            "basis": "observed",
+            "evidence_ref": "fixture:unavailable"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "unavailable_evidence"
+        ]
+      }
+    },
+    {
+      "id": "configured-not-observed",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "configured",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "non_observed_evidence"
+        ]
+      }
+    },
+    {
+      "id": "inferred-not-observed",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "inferred",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "non_observed_evidence"
+        ]
+      }
+    },
+    {
+      "id": "false-dominates-all",
+      "changes": {},
+      "expression": {
+        "all": [
+          {
+            "eq": {
+              "path": "/model/name",
+              "value": "wrong"
+            }
+          },
+          {
+            "eq": {
+              "path": "/missing",
+              "value": true
+            }
+          }
+        ]
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "false",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "true-dominates-any",
+      "changes": {},
+      "expression": {
+        "any": [
+          {
+            "eq": {
+              "path": "/model/name",
+              "value": "model-a"
+            }
+          },
+          {
+            "eq": {
+              "path": "/missing",
+              "value": true
+            }
+          }
+        ]
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "unknown-all",
+      "changes": {},
+      "expression": {
+        "all": [
+          {
+            "eq": {
+              "path": "/model/name",
+              "value": "model-a"
+            }
+          },
+          {
+            "eq": {
+              "path": "/missing",
+              "value": true
+            }
+          }
+        ]
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "unknown-any",
+      "changes": {},
+      "expression": {
+        "any": [
+          {
+            "eq": {
+              "path": "/model/name",
+              "value": "wrong"
+            }
+          },
+          {
+            "eq": {
+              "path": "/missing",
+              "value": true
+            }
+          }
+        ]
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "missing_evidence"
+        ]
+      }
+    },
+    {
+      "id": "boolean-not-integer",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/tools/0/enabled",
+          "value": 0
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "false",
+        "reasons": []
+      }
+    },
+    {
+      "id": "expired-boundary",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T13:00:00Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "expired"
+        ]
+      }
+    },
+    {
+      "id": "not-yet-valid",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T11:59:59Z",
+      "expected": {
+        "result": "unknown",
+        "reasons": [
+          "not_yet_valid"
+        ]
+      }
+    },
+    {
+      "id": "valid-start-boundary",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:00:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "offset-same-instant",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T07:30:00-05:00",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "second-session",
+      "changes": {
+        "observation_id": "synthetic-observation-002",
+        "subject": {
+          "agent": "example-agent",
+          "host": "example-host",
+          "surface": "example-cli",
+          "session_id": "session-b",
+          "execution_id": "execution-b",
+          "configuration_epoch": 0
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "tiershift",
+      "changes": {
+        "observation_id": "synthetic-observation-003",
+        "subject": {
+          "agent": "example-agent",
+          "host": "example-host",
+          "surface": "example-cli",
+          "session_id": "session-a",
+          "execution_id": "execution-a",
+          "configuration_epoch": 1
+        },
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": "model-b"
+          },
+          {
+            "path": "/model/effort",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:effort",
+            "value": "medium"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "false",
+        "reasons": []
+      }
+    },
+    {
+      "id": "unicode-reference",
+      "changes": {
+        "links": [
+          {
+            "rel": "objective",
+            "namespace": "example/objectives",
+            "id": "café-学",
+            "revision": "1"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "unknown-root-field",
+      "changes": {
+        "unsafe": true
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "unknown-format",
+      "changes": {
+        "format": "acve-observation/99.0.0"
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "invalid-interval",
+      "changes": {
+        "valid_until": "2026-01-01T12:00:00Z"
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "boolean-epoch",
+      "changes": {
+        "subject": {
+          "agent": "example-agent",
+          "host": "example-host",
+          "surface": "example-cli",
+          "session_id": "session-a",
+          "execution_id": "execution-a",
+          "configuration_epoch": true
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "duplicate-assertion",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          },
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "unknown-status-has-value",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "unknown",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "known-without-value",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "noncanonical-pointer",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/a~2b",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "source-path-escape",
+      "changes": {
+        "source": {
+          "repository": "example/capabilities",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "path": "../outside"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "source-path-absolute",
+      "changes": {
+        "source": {
+          "repository": "example/capabilities",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "path": "/outside"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "unknown-operator",
+      "changes": {},
+      "expression": {
+        "not": {
+          "eq": {
+            "path": "/model/name",
+            "value": "model-a"
+          }
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "empty-all",
+      "changes": {},
+      "expression": {
+        "all": []
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "extra-query-field",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a",
+          "extra": true
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "float-value",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": "fixture:model",
+            "value": 1.5
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "invalid-time",
+      "changes": {},
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "not-a-timestamp",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "extra-receipt",
+      "changes": {
+        "receipts": {
+          "invocation": "succeeded",
+          "transport": "succeeded",
+          "durability": "failed",
+          "evaluation": "not_attempted",
+          "overall": "succeeded"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "blank-id",
+      "changes": {
+        "observation_id": "   "
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "blank-subject",
+      "changes": {
+        "subject": {
+          "agent": "\t ",
+          "host": "example-host",
+          "surface": "example-cli",
+          "session_id": "session-a",
+          "execution_id": "execution-a",
+          "configuration_epoch": 0
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "unqualified-source",
+      "changes": {
+        "source": {
+          "repository": "repository",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "path": "registry/capabilities.json"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "namespace-source",
+      "changes": {
+        "source": {
+          "repository": "urn:example:source",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "path": "registry/capabilities.json"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    },
+    {
+      "id": "whitespace-source",
+      "changes": {
+        "source": {
+          "repository": "example/ repo",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "path": "registry/capabilities.json"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "blank-link",
+      "changes": {
+        "links": [
+          {
+            "rel": "objective",
+            "namespace": "example/objectives",
+            "id": " ",
+            "revision": "1"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "blank-evidence-ref",
+      "changes": {
+        "assertions": [
+          {
+            "path": "/model/name",
+            "status": "known",
+            "basis": "observed",
+            "evidence_ref": " ",
+            "value": "model-a"
+          }
+        ]
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "bad-existing-integrity",
+      "changes": {
+        "integrity": {
+          "algorithm": "incorrect",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "extra-existing-integrity",
+      "changes": {
+        "integrity": {
+          "algorithm": "acve-observation-json/0.1.0",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "extra": true
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "missing-existing-integrity-digest",
+      "changes": {
+        "integrity": {
+          "algorithm": "acve-observation-json/0.1.0"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "replace-valid-old-digest",
+      "changes": {
+        "integrity": {
+          "algorithm": "acve-observation-json/0.1.0",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "expression": {
+        "eq": {
+          "path": "/model/name",
+          "value": "model-a"
+        }
+      },
+      "at": "2026-01-01T12:30:00Z",
+      "expected": {
+        "result": "true",
+        "reasons": []
+      }
+    }
+  ]
+}

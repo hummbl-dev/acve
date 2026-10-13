@@ -4,6 +4,7 @@
     python -m acve hash <lockfile.json> [--verify]
     python -m acve match <lockfile.json> <record.json | records-dir | feed.jsonl>
     python -m acve build-feed <records-dir> [-o feed.jsonl]
+    python -m acve observation-check <observation.json> <query.json> --at <timestamp>
 """
 
 from __future__ import annotations
@@ -74,6 +75,40 @@ def cmd_build_feed(args) -> int:
     return 0
 
 
+def cmd_observation_check(args) -> int:
+    """Offline evidence evaluation: true=0, false=1, invalid=2, unknown=3."""
+    from .observation import MAX_BYTES, load_observation, evaluate_observation
+
+    def read_bounded(path):
+        with Path(path).open('rb') as stream:
+            raw = stream.read(MAX_BYTES + 1)
+        if len(raw) > MAX_BYTES:
+            raise ValueError('input_limit')
+        return raw
+
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError('duplicate_key')
+            result[key] = value
+        return result
+
+    def forbidden(_):
+        raise ValueError('unsupported_number')
+
+    try:
+        document = load_observation(read_bounded(args.observation))
+        expression = json.loads(read_bounded(args.query).decode('utf-8'), object_pairs_hook=pairs,
+                                parse_float=forbidden, parse_constant=forbidden)
+        result = evaluate_observation(document, expression, at=args.at)
+    except (OSError, ValueError, RecursionError):
+        print(json.dumps({'format': 'acve-observation-cli-error/0.1.0', 'error': 'invalid_or_unavailable_input'}))
+        return 2
+    print(json.dumps(result, sort_keys=True, ensure_ascii=True))
+    return {'true': 0, 'false': 1, 'unknown': 3}[result['result']]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="acve", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -97,6 +132,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("records_dir")
     b.add_argument("-o", "--out", default="feed.jsonl")
     b.set_defaults(fn=cmd_build_feed)
+
+    o = sub.add_parser('observation-check', help='evaluate sealed evidence; exits 0=true, 1=false, 2=invalid, 3=unknown')
+    o.add_argument('observation')
+    o.add_argument('query')
+    o.add_argument('--at', required=True, help='explicit RFC3339 evaluation time')
+    o.set_defaults(fn=cmd_observation_check)
 
     args = ap.parse_args(argv)
     return args.fn(args)
