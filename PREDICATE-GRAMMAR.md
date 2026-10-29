@@ -46,7 +46,9 @@ config_body         = "{" , [ config_sha256_list ] , [ require_list ] , [ window
 config_sha256_list  = '"config_sha256"' , ":" , "[" , hash , { "," , hash } , "]" ;
 require_list        = '"require"' , ":" , "[" , predicate , { "," , predicate } , "]" ;   (* AND *)
 window_wrapper      = '"window"' , ":" , "{" , [ window_bounds ] , "}" ;
-window_bounds       = [ "introduced_at" ] , [ "fixed_at" ] , [ "last_affected_at" ] ;  (* ISO 8601 *)
+window_bounds       = window_member , { "," , window_member } ;
+window_member       = ( '"introduced_at"' | '"fixed_at"' | '"last_affected_at"' ) , ":" , iso_datetime ;
+iso_datetime        = (* ISO 8601 date-time string, e.g. "2026-10-01T00:00:00Z" *) ;
 
 predicate  = "{" , "path" , ":" , path , "," , "op" , ":" , op ,
              [ "," , "value" , ":" , json ] , "}" ;
@@ -61,7 +63,6 @@ identifier = /[A-Za-z_][A-Za-z0-9_]*/ ;
 field      = /[A-Za-z_][A-Za-z0-9_]*/ ;
 selector_value = /[^\]]*/ ;   (* literal; no nesting or escaping *)
 
-window     = "introduced_at"?, "fixed_at"?, "last_affected_at"? ;  (* ISO 8601 *)
 hash       = /[0-9a-f]{64}/ ;
 ```
 
