@@ -46,7 +46,9 @@ config_body         = "{" , [ config_sha256_list ] , [ require_list ] , [ window
 config_sha256_list  = '"config_sha256"' , ":" , "[" , hash , { "," , hash } , "]" ;
 require_list        = '"require"' , ":" , "[" , predicate , { "," , predicate } , "]" ;   (* AND *)
 window_wrapper      = '"window"' , ":" , "{" , [ window_bounds ] , "}" ;
-window_bounds       = [ "introduced_at" ] , [ "fixed_at" ] , [ "last_affected_at" ] ;  (* ISO 8601 *)
+window_bounds       = window_member , { "," , window_member } ;
+window_member       = ( '"introduced_at"' | '"fixed_at"' | '"last_affected_at"' ) , ":" , iso_datetime ;   (* each name at most once — duplicates are invalid *)
+iso_datetime        = (* ISO 8601 date-time string, e.g. "2026-10-01T00:00:00Z" *) ;
 
 predicate  = "{" , "path" , ":" , path , "," , "op" , ":" , op ,
              [ "," , "value" , ":" , json ] , "}" ;
@@ -61,7 +63,6 @@ identifier = /[A-Za-z_][A-Za-z0-9_]*/ ;
 field      = /[A-Za-z_][A-Za-z0-9_]*/ ;
 selector_value = /[^\]]*/ ;   (* literal; no nesting or escaping *)
 
-window     = "introduced_at"?, "fixed_at"?, "last_affected_at"? ;  (* ISO 8601 *)
 hash       = /[0-9a-f]{64}/ ;
 ```
 
@@ -198,6 +199,9 @@ and SHOULD satisfy the following derived corpus:
   (Python `str(True) == "True"`; this is a documented sharp edge, see §11).
 - non-`exists` ops are existential over the resolution set.
 - `incomparable` ordered compares return no match (not false-y errors).
+- each `window` member name MUST appear at most once; a document that
+  repeats a member name is invalid (parsers that silently keep the last
+  duplicate value would disagree on the effective bound).
 - rejected/withdrawn records match nothing.
 
 ## 11. Known limitations (inherited from `SPEC.md` §7 / `REVIEW.md`)
