@@ -112,5 +112,24 @@ class TestFeed(unittest.TestCase):
         self.assertTrue(all(r["id"].startswith("ACVE-") for r in feed))
 
 
+class TestVerifyEntrypoint(unittest.TestCase):
+    def test_verify_main_valid(self):
+        from acve.cli import verify_main
+        rc = verify_main([str(EXAMPLES / "agent-lock.example.json"), "agent-lock"])
+        self.assertEqual(rc, 0)
+
+    def test_verify_main_invalid(self):
+        import tempfile
+        from acve.cli import verify_main
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+            fh.write('{"model": {}}')
+            path = fh.name
+        try:
+            rc = verify_main([path, "agent-lock"])
+        finally:
+            Path(path).unlink()
+        self.assertEqual(rc, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
