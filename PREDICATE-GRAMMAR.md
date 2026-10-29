@@ -34,17 +34,19 @@ Records with `status ∈ {rejected, withdrawn}` never match.
 ## 2. Grammar (EBNF)
 
 ```ebnf
-affected_entry = component | configuration ;
+affected_entry = component_entry | configuration_entry ;
 
-component      = "unit" ":" "component" , component_body ;
-component_body = "kind" , "name" , [ "purl" ] , [ ranges ] , [ versions ] ;
-kind           = "harness" | "model" | "tool" | "skill" | "prompt"
-               | "policy" | "protocol" | "package" ;
+component_entry = "{" , '"unit"' , ":" , '"component"' , "," , '"component"' , ":" , component_body , "}" ;
+component_body  = "{" , '"kind"' , ":" , kind , "," , '"name"' , ":" , name , [ "," , '"purl"' , ":" , purl ] , [ "," , '"ranges"' , ":" , ranges ] , [ "," , '"versions"' , ":" , versions ] , "}" ;
+kind           = '"harness"' | '"model"' | '"tool"' | '"skill"' | '"prompt"'
+               | '"policy"' | '"protocol"' | '"package"' ;
 
-configuration      = config_match ;
-config_match       = [ config_sha256_list ] , [ "require" , require_list ] , [ window ] ;
-config_sha256_list = "config_sha256" , "[" , hash , { "," , hash } , "]" ;
-require_list       = "[" , predicate , { "," , predicate } , "]" ;   (* AND *)
+configuration_entry = "{" , '"unit"' , ":" , '"configuration"' , "," , '"configuration"' , ":" , config_body , "}" ;
+config_body         = "{" , [ config_sha256_list ] , [ require_list ] , [ window_wrapper ] , "}" ;
+config_sha256_list  = '"config_sha256"' , ":" , "[" , hash , { "," , hash } , "]" ;
+require_list        = '"require"' , ":" , "[" , predicate , { "," , predicate } , "]" ;   (* AND *)
+window_wrapper      = '"window"' , ":" , "{" , [ window_bounds ] , "}" ;
+window_bounds       = [ "introduced_at" ] , [ "fixed_at" ] , [ "last_affected_at" ] ;  (* ISO 8601 *)
 
 predicate  = "{" , "path" , ":" , path , "," , "op" , ":" , op ,
              [ "," , "value" , ":" , json ] , "}" ;
@@ -153,7 +155,7 @@ MCP tool whose callable signature was not pinned (rug-pull surface):
 `component` matches when the kind's slot in the lockfile has the same `name`
 (and `purl`, if given), and the slot `version` is inside a `ranges[]` interval
 or listed in `versions[]`. Range bounds: `introduced` (`"0"` = always) ≤
-version `< fixed`; `last_affected` ≤ version; `limit` > version. `SEMVER`
+version `< fixed`; version ≤ `last_affected`; `limit` > version. `SEMVER`
 compares version-tuples, `DATE` compares ISO strings, `GIT` matches only via
 explicit `versions[]` (no commit ordering).
 
@@ -191,9 +193,9 @@ grammar (from `REVIEW.md`):
 A conforming implementation MUST pass the cases exercised by `tests/test_acve.py`
 and SHOULD satisfy the following derived corpus:
 
-- selector `[k=v]` compares via `str()` (so `true` matches `"True"`? — **no**:
-  Python `str(True)=="True"`, so `[field=true]` matches `True`; this is a
-  documented sharp edge, see §11).
+- selector `[k=v]` compares via `str()` without case normalization:
+  `[field=True]` matches Boolean `True`, while `[field=true]` does not
+  (Python `str(True) == "True"`; this is a documented sharp edge, see §11).
 - non-`exists` ops are existential over the resolution set.
 - `incomparable` ordered compares return no match (not false-y errors).
 - rejected/withdrawn records match nothing.
