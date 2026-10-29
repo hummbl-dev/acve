@@ -68,7 +68,7 @@ package), and its `version` is inside a `ranges[]` interval or listed in
 `versions[]`.
 
 Range semantics: `introduced` (`"0"` = always) ≤ version < `fixed`;
-`last_affected` ≤ version; `limit` > version. SEMVER compares
+version ≤ last_affected; limit > version. SEMVER compares
 version-tuples; DATE compares ISO strings; GIT only matches via
 `versions[]` (ordering needs history the format doesn't carry).
 
