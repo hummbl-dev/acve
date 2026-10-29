@@ -143,5 +143,14 @@ def main(argv: list[str] | None = None) -> int:
     return args.fn(args)
 
 
+def verify_main(argv: list[str] | None = None) -> int:
+    """Entry point for `acve-verify`: validate an instance against a schema.
+
+    Equivalent to `acve validate <instance> <schema>`; exits 0 valid / 1 invalid.
+    """
+    args = argv if argv is not None else sys.argv[1:]
+    return main(["validate", *args])
+
+
 if __name__ == "__main__":
     sys.exit(main())

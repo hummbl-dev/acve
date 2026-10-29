@@ -13,6 +13,7 @@ dependencies = []
 
 [project.scripts]
 acve = "acve.cli:main"
+acve-verify = "acve.cli:verify_main"
 
 [tool.setuptools]
 packages = ["acve"]
