@@ -54,6 +54,37 @@ class TestSchemaValidation(unittest.TestCase):
         errors = acve.validate(rec, acve.load_schema("agent-vulnerability"))
         self.assertTrue(any("id" in e for e in errors))
 
+    def test_v1_empty_window_bound_validates(self):
+        """avr/1.0.0 accepts an empty window bound. The gap stays visible."""
+        schema = acve.load_schema("agent-vulnerability")
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "avr/1.0.0")
+        window_schema = None
+        for branch in schema["properties"]["affected"]["items"]["oneOf"]:
+            window_schema = (
+                branch.get("properties", {})
+                .get("configuration", {})
+                .get("properties", {})
+                .get("window")
+            )
+            if window_schema:
+                break
+        self.assertIsNotNone(window_schema)
+        for key in ("introduced_at", "fixed_at", "last_affected_at"):
+            self.assertNotIn("minLength", window_schema["properties"][key])
+            self.assertEqual(acve.validate({key: ""}, window_schema), [])
+            self.assertEqual(acve.validate({key: "2024-11-25T00:00:00Z"}, window_schema), [])
+
+        rec = _load(RECORDS / "ACVE-2026-00001.json")
+        for key in ("introduced_at", "fixed_at", "last_affected_at"):
+            doc = copy.deepcopy(rec)
+            doc["affected"][0]["configuration"]["window"][key] = ""
+            self.assertEqual(acve.validate(doc, schema), [], key)
+
+        good = copy.deepcopy(rec)
+        good["affected"][0]["configuration"]["window"]["fixed_at"] = "2025-01-01T00:00:00Z"
+        good["affected"][0]["configuration"]["window"]["last_affected_at"] = "2024-12-31T00:00:00Z"
+        self.assertEqual(acve.validate(good, schema), [])
+
 
 class TestUnitIdentity(unittest.TestCase):
     def test_example_hash_verifies(self):

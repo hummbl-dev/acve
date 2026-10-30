@@ -48,7 +48,7 @@ require_list        = '"require"' , ":" , "[" , predicate , { "," , predicate } 
 window_wrapper      = '"window"' , ":" , "{" , [ window_bounds ] , "}" ;
 window_bounds       = window_member , { "," , window_member } ;
 window_member       = ( '"introduced_at"' | '"fixed_at"' | '"last_affected_at"' ) , ":" , iso_datetime ;   (* each name at most once — duplicates are invalid *)
-iso_datetime        = '"' , /[^"]+/ , '"' ;   (* non-empty quoted string; §5 compares the text *)
+iso_datetime        = '"' , /[^"]+/ , '"' ;   (* intended non-empty token; v1.0.0 schema and validator do not enforce it, see §5 *)
 
 predicate  = "{" , "path" , ":" , path , "," , "op" , ":" , op ,
              [ "," , "value" , ":" , json ] , "}" ;
@@ -108,8 +108,8 @@ AND-ed; OR is expressed with multiple `affected[]` entries.
 ## 5. Window semantics
 
 `window` bounds matching by the lockfile's `generated_at` (ISO-8601 string
-compare). `iso_datetime` is a non-empty quoted string. `acve/match.py`
-compares that text and does not parse a datetime:
+compare). The grammar token `iso_datetime` is a non-empty quoted string.
+`acve/match.py` compares that text and does not parse a datetime:
 
 | Bound | Condition to remain matched |
 |---|---|
@@ -119,6 +119,16 @@ compares that text and does not parse a datetime:
 
 Required because hosted-model identity is temporal: `model.pin: alias` means
 "whatever the provider serves today."
+
+The frozen `avr/1.0.0` schema and `acve/validator.py` do not enforce a
+non-empty window bound. `introduced_at`, `fixed_at`, and `last_affected_at`
+are strings with `format: date-time` and no `minLength`, and the validator
+does not check `format`, so an empty string validates. An empty `fixed_at`
+(`generated_at >= ""`) or `last_affected_at` (`generated_at > ""`) makes
+`_in_window` return false, so the record matches nothing. The next format
+version will add `minLength` 1. That is a breaking change: it bumps the
+`avr/X.Y.Z` const and the schema `$id`, and it is not applied in place to
+`avr/1.0.0`.
 
 ## 6. Worked examples
 
@@ -203,8 +213,10 @@ and SHOULD satisfy the following derived corpus:
 - each `window` member name MUST appear at most once; a document that
   repeats a member name is invalid (parsers that silently keep the last
   duplicate value would disagree on the effective bound).
-- `iso_datetime` is a non-empty quoted string. An empty production is not
-  a timestamp. The matcher compares the text with `generated_at`.
+- `iso_datetime` in this grammar is a non-empty quoted string. The v1.0.0
+  schema and validator do not enforce that: an empty bound validates, and an
+  empty `fixed_at` or `last_affected_at` makes the record match nothing.
+  The next format version will add `minLength` 1.
 - rejected/withdrawn records match nothing.
 
 ## 11. Known limitations (inherited from `SPEC.md` §7 / `REVIEW.md`)
