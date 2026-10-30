@@ -48,7 +48,7 @@ require_list        = '"require"' , ":" , "[" , predicate , { "," , predicate } 
 window_wrapper      = '"window"' , ":" , "{" , [ window_bounds ] , "}" ;
 window_bounds       = window_member , { "," , window_member } ;
 window_member       = ( '"introduced_at"' | '"fixed_at"' | '"last_affected_at"' ) , ":" , iso_datetime ;   (* each name at most once — duplicates are invalid *)
-iso_datetime        = (* ISO 8601 date-time string, e.g. "2026-10-01T00:00:00Z" *) ;
+iso_datetime        = '"' , /[^"]+/ , '"' ;   (* non-empty quoted string; §5 compares the text *)
 
 predicate  = "{" , "path" , ":" , path , "," , "op" , ":" , op ,
              [ "," , "value" , ":" , json ] , "}" ;
@@ -108,7 +108,8 @@ AND-ed; OR is expressed with multiple `affected[]` entries.
 ## 5. Window semantics
 
 `window` bounds matching by the lockfile's `generated_at` (ISO-8601 string
-compare):
+compare). `iso_datetime` is a non-empty quoted string. `acve/match.py`
+compares that text and does not parse a datetime:
 
 | Bound | Condition to remain matched |
 |---|---|
@@ -202,6 +203,8 @@ and SHOULD satisfy the following derived corpus:
 - each `window` member name MUST appear at most once; a document that
   repeats a member name is invalid (parsers that silently keep the last
   duplicate value would disagree on the effective bound).
+- `iso_datetime` is a non-empty quoted string. An empty production is not
+  a timestamp. The matcher compares the text with `generated_at`.
 - rejected/withdrawn records match nothing.
 
 ## 11. Known limitations (inherited from `SPEC.md` §7 / `REVIEW.md`)
